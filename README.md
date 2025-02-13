@@ -11,7 +11,8 @@ Analysis of Pareto data and VLM auto-interp, in preparation for NeurIPS 2025
 
 ### Individual image data
 * Load the image ids from `/network/scratch/s/sonia.joseph/CLIP_AUDIT/open-clip_laion_CLIP-ViT-B-32-DataComp.XL-s13B-b90K/imagenet21k/train/image_ids.h5`
-* The relevant image corresponding to the ID is under `/network/scratch/s/sonia.joseph/CLIP_AUDIT/selected_imagenet21k`
+* The relevant images corresponding to the image ids are under `/network/scratch/s/sonia.joseph/CLIP_AUDIT/selected_imagenet21k`
+* For reference, [here is the code I used to generate the top 20 image figure from the individual images](https://github.com/soniajoseph/CLIP_AUDIT/blob/main/clip_audit/generate_imagenet21k_imgs_with_heatmaps.py).
 
 
 ### Human interp results
