@@ -5,9 +5,13 @@ Analysis of Pareto data and VLM auto-interp, in preparation for NeurIPS 2025
 ## How to access the data
 
 
-### Raw image data
-* The data that we gave Pareto for all the neurons is [here](https://drive.google.com/drive/u/0/folders/1THejTazygC8LhwGVshnB1CGid08kWpal). The random neurons that we gave Pareto are [here](https://drive.google.com/drive/u/0/folders/1hcainPL_2BmrP85cJ4RseTXrkNsfxb8Y).
-* You can also access the data on the Mila cluster here: `/network/scratch/s/sonia.joseph/CLIP_AUDIT/sampled_images/open-clip_laion_CLIP-ViT-B-32-DataComp.XL-s13B-b90K/imagenet21k/train/all_neurons` and `/network/scratch/s/sonia.joseph/CLIP_AUDIT/sampled_images/open-clip_laion_CLIP-ViT-B-32-DataComp.XL-s13B-b90K/imagenet21k/train/all_neurons/random`. You should have access.
+### Image data (top 20 arranged together)
+* *Google Drive version.* The data that we gave Pareto for all the neurons is [here](https://drive.google.com/drive/u/0/folders/1THejTazygC8LhwGVshnB1CGid08kWpal). The random neurons that we gave Pareto are [here](https://drive.google.com/drive/u/0/folders/1hcainPL_2BmrP85cJ4RseTXrkNsfxb8Y).
+* *Mila cluster version.* You can also access the data on the Mila cluster here: `/network/scratch/s/sonia.joseph/CLIP_AUDIT/sampled_images/open-clip_laion_CLIP-ViT-B-32-DataComp.XL-s13B-b90K/imagenet21k/train/all_neurons` and `/network/scratch/s/sonia.joseph/CLIP_AUDIT/sampled_images/open-clip_laion_CLIP-ViT-B-32-DataComp.XL-s13B-b90K/imagenet21k/train/all_neurons/random`. You should have access.
+
+### Individual image data
+* Load the image ids from `/network/scratch/s/sonia.joseph/CLIP_AUDIT/open-clip_laion_CLIP-ViT-B-32-DataComp.XL-s13B-b90K/imagenet21k/train/image_ids.h5`
+* The relevant image corresponding to the ID is under `/network/scratch/s/sonia.joseph/CLIP_AUDIT/selected_imagenet21k`
 
 
 ### Human interp results
