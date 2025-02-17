@@ -1,0 +1,12 @@
+accelerate>1
+tokenizers==0.15.1
+torch>=2
+torchvision>=0.15
+tqdm
+transformers==4.37.2
+numpy==1.26.4
+opencv-python
+decord
+einops==0.6.1
+timm==0.9.12
+sentencepiece==0.1.99
