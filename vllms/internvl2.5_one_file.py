@@ -5,6 +5,12 @@ from decord import VideoReader, cpu
 from PIL import Image
 from torchvision.transforms.functional import InterpolationMode
 from transformers import AutoModel, AutoTokenizer
+import os
+import json
+import shutil
+from pathlib import Path
+from tqdm import tqdm
+import random
 
 IMAGENET_MEAN = (0.485, 0.456, 0.406)
 IMAGENET_STD = (0.229, 0.224, 0.225)
@@ -80,8 +86,7 @@ def load_image(image_file, input_size=448, max_num=12):
     pixel_values = torch.stack(pixel_values)
     return pixel_values
 
-# If you have an 80G A100 GPU, you can put the entire model on a single GPU.
-# Otherwise, you need to load a model using multiple GPUs, please refer to the `Multiple GPUs` section.
+# Initialize model and tokenizer
 path = 'OpenGVLab/InternVL2_5-8B'
 model = AutoModel.from_pretrained(
     path,
@@ -90,26 +95,62 @@ model = AutoModel.from_pretrained(
     trust_remote_code=True).eval().cuda()
 tokenizer = AutoTokenizer.from_pretrained(path, trust_remote_code=True, use_fast=False)
 
-# set the max number of tiles in `max_num`
-pixel_values = load_image('/network/scratch/s/sonia.joseph/CLIP_AUDIT/sampled_images/open-clip_laion_CLIP-ViT-B-32-DataComp.XL-s13B-b90K/imagenet21k/train/all_neurons/layer_0/neuron_0/hook_mlp_out/max/top/neuron_571_layer_0_top_max_hook_mlp_out_no_heatmap.png', max_num=12).to(torch.bfloat16).cuda()
+# Setup paths
+base_path = Path('/network/scratch/s/sonia.joseph/CLIP_AUDIT/sampled_images/open-clip_laion_CLIP-ViT-B-32-DataComp.XL-s13B-b90K/imagenet21k/train/all_neurons')
+output_dir = Path('vllm_results_zero_shot_one_file')
+output_dir.mkdir(exist_ok=True)
+image_output_dir = output_dir / 'images'
+image_output_dir.mkdir(exist_ok=True)
+
+# Find all relevant PNG files
+image_files = []
+for root, dirs, files in os.walk(base_path):
+    for file in files:
+        if file.endswith('no_heatmap.png'):
+            image_files.append(Path(root) / file)
+
+random.seed(42)
+random.shuffle(image_files)
+print(f"Total images: {len(image_files)}")
+
+results = {}
 generation_config = dict(max_new_tokens=1024, do_sample=False)
+question = '<image>\nYou are shown 16 images that highly activated a neuron in a vision model. Describe any commonalities among all 16 images, what the neuron is encoding for. If the images have no commonalities at all, just say "No commonalities found". If there is groups of images that are similar, describe the commonalities of the groups.'
 
-# single-image single-round conversation (单图单轮对话)
-question = '<image>\nYou are shown 16 images that activated a neuron in a vision model. Describe any commonalities among all 16 images, what the neuron is encoding for. If the images have no commonalities at all, just say "No commonalities found".'
-response = model.chat(tokenizer, pixel_values, question, generation_config)
-print(f'User: {question}\nAssistant: {response}')
+# Process each image
+for img_path in tqdm(image_files[:20], desc="Processing images"):
+    try:
+        # Load and process image
+        pixel_values = load_image(str(img_path), max_num=12).to(torch.bfloat16).cuda()
+        
+        # Get model response
+        response = model.chat(tokenizer, pixel_values, question, generation_config)
+        
+        # Create relative path for storing in results
+        rel_path = img_path.relative_to(base_path)
+        
+        # Store results
+        results[str(rel_path)] = {
+            'response': response,
+            'neuron_info': {
+                'layer': rel_path.parts[2],  # Assuming directory structure contains layer info
+                'neuron': rel_path.stem.split('_')[1]  # Extract neuron number from filename
+            }
+        }
+        
+        # Copy image to output directory
+        output_image_path = image_output_dir / rel_path.name
+        shutil.copy2(img_path, output_image_path)
+        
+        # Periodically save results
+        with open(output_dir / 'vllm_results_zero_shot_one_file.json', 'w') as f:
+            json.dump(results, f, indent=2)
+            
+    except Exception as e:
+        print(f"Error processing {img_path}: {str(e)}")
 
-# # multi-image multi-round conversation, combined images (多图多轮对话，拼接图像)
-# pixel_values1 = load_image('./examples/image1.jpg', max_num=12).to(torch.bfloat16).cuda()
-# pixel_values2 = load_image('./examples/image2.jpg', max_num=12).to(torch.bfloat16).cuda()
-# pixel_values = torch.cat((pixel_values1, pixel_values2), dim=0)
+# Final save of results
+with open(output_dir / 'vllm_results_zero_shot_one_file.json', 'w') as f:
+    json.dump(results, f, indent=2)
 
-# question = '<image>\nDescribe the two images in detail.'
-# response, history = model.chat(tokenizer, pixel_values, question, generation_config,
-#                                history=None, return_history=True)
-# print(f'User: {question}\nAssistant: {response}')
-
-# question = 'What are the similarities and differences between these two images.'
-# response, history = model.chat(tokenizer, pixel_values, question, generation_config,
-#                                history=history, return_history=True)
-# print(f'User: {question}\nAssistant: {response}')
+print(f"Processing complete. Results saved to {output_dir}")
