@@ -10,3 +10,4 @@ decord
 einops==0.6.1
 timm==0.9.12
 sentencepiece==0.1.99
+openai
